@@ -16,6 +16,7 @@ param(
     [switch]$OnlySummary,
     [string]$CsvPrefix = "",
     [string]$HtmlReport = "",
+    [string]$TokenFile = "",
     [string]$ScenarioMode = "",
     [string]$EnablePrometheus = "",
     [string]$EnableMetricsReport = "",
@@ -28,13 +29,24 @@ Set-Location $ScriptPath
 
 $LocustFile = "case/locust_life.py"
 $MasterPidFile = "locust_master.pid"
-$WorkerPidFile = "locust_workers.pid"
+$WorkerPidFile = if ($Mode -eq "worker") {
+    "locust_workers_{0}_{1}.pid" -f $WorkerIndexOffset, $WorkerCount
+} else {
+    "locust_workers.pid"
+}
+$ManageMaster = $Mode -in "master", "local"
+$ManageWorkers = $Mode -in "worker", "local"
 
 function Stop-LocustSafely {
+    param(
+        [bool]$StopMaster = $true,
+        [bool]$StopWorkers = $true
+    )
+
     Write-Host "Stopping Locust processes safely..." -ForegroundColor Yellow
     $stoppedAny = $false
 
-    if (Test-Path $MasterPidFile) {
+    if ($StopMaster -and (Test-Path $MasterPidFile)) {
         $masterPid = Get-Content $MasterPidFile
         try {
             $process = Get-Process -Id $masterPid -ErrorAction SilentlyContinue
@@ -48,7 +60,7 @@ function Stop-LocustSafely {
         }
     }
 
-    if (Test-Path $WorkerPidFile) {
+    if ($StopWorkers -and (Test-Path $WorkerPidFile)) {
         $workerPids = Get-Content $WorkerPidFile
         foreach ($workerPid in $workerPids) {
             if ($workerPid -match '^\d+$') {
@@ -87,12 +99,33 @@ function Set-LocustEnvVar {
     Write-Host "Set $Name=$Value" -ForegroundColor DarkGray
 }
 
+function Ensure-ParentDirectory {
+    param(
+        [string]$PathValue
+    )
+
+    if ([string]::IsNullOrWhiteSpace($PathValue)) {
+        return
+    }
+
+    $parent = [System.IO.Path]::GetDirectoryName($PathValue)
+    if ([string]::IsNullOrWhiteSpace($parent)) {
+        return
+    }
+
+    if (-not (Test-Path $parent)) {
+        New-Item -ItemType Directory -Path $parent -Force | Out-Null
+        Write-Host "Created directory: $parent" -ForegroundColor DarkGray
+    }
+}
+
 function Get-MasterArgumentList {
     param(
         [bool]$StartWebUi
     )
 
     $args = @("-f", $LocustFile, "--master")
+    $expectedWorkers = 0
 
     if ($StartWebUi) {
         $args += @("--web-port", "$WebPort")
@@ -126,7 +159,17 @@ function Get-MasterArgumentList {
             $args += @("--html", $HtmlReport)
         }
         if ($Mode -eq "local" -and $WorkerCount -gt 0) {
-            $args += @("--expect-workers", "$WorkerCount")
+            $expectedWorkers = $WorkerCount
+        } elseif ($Mode -eq "master") {
+            if ($TotalWorkerCount -gt 0) {
+                $expectedWorkers = $TotalWorkerCount
+            } elseif ($WorkerCount -gt 0) {
+                $expectedWorkers = $WorkerCount
+            }
+        }
+
+        if ($expectedWorkers -gt 0) {
+            $args += @("--expect-workers", "$expectedWorkers")
         }
     }
 
@@ -143,16 +186,17 @@ function Get-WorkerArgumentList {
     return $args
 }
 
-Stop-LocustSafely
+Stop-LocustSafely -StopMaster:$ManageMaster -StopWorkers:$ManageWorkers
 
 Write-Host "Cleaning up old PID files..." -ForegroundColor Yellow
-if (Test-Path $MasterPidFile) { Remove-Item $MasterPidFile -Force }
-if (Test-Path $WorkerPidFile) { Remove-Item $WorkerPidFile -Force }
+if ($ManageMaster -and (Test-Path $MasterPidFile)) { Remove-Item $MasterPidFile -Force }
+if ($ManageWorkers -and (Test-Path $WorkerPidFile)) { Remove-Item $WorkerPidFile -Force }
 
 $oldScenarioMode = $env:LOCUST_SCENARIO_MODE
 $oldEnablePrometheus = $env:LOCUST_ENABLE_PROMETHEUS
 $oldEnableMetricsReport = $env:LOCUST_ENABLE_METRICS_REPORT
 $oldEnableOrderPairStore = $env:LOCUST_ENABLE_ORDER_PAIR_STORE
+$oldTokenFile = $env:LOCUST_TOKEN_FILE
 
 if (-not [string]::IsNullOrWhiteSpace($ScenarioMode)) {
     Set-LocustEnvVar -Name "LOCUST_SCENARIO_MODE" -Value $ScenarioMode
@@ -166,8 +210,14 @@ if (-not [string]::IsNullOrWhiteSpace($EnableMetricsReport)) {
 if (-not [string]::IsNullOrWhiteSpace($EnableOrderPairStore)) {
     Set-LocustEnvVar -Name "LOCUST_ENABLE_ORDER_PAIR_STORE" -Value $EnableOrderPairStore
 }
+if (-not [string]::IsNullOrWhiteSpace($TokenFile)) {
+    Set-LocustEnvVar -Name "LOCUST_TOKEN_FILE" -Value $TokenFile
+}
 
 try {
+    Ensure-ParentDirectory -PathValue $CsvPrefix
+    Ensure-ParentDirectory -PathValue $HtmlReport
+
     if ($Mode -in "worker", "local") {
         if ($WorkerCount -eq 0) {
             $Cores = [Environment]::ProcessorCount
@@ -274,10 +324,10 @@ try {
         Read-Host
     }
 } finally {
-    Stop-LocustSafely
+    Stop-LocustSafely -StopMaster:$ManageMaster -StopWorkers:$ManageWorkers
 
-    if (Test-Path $MasterPidFile) { Remove-Item $MasterPidFile -Force }
-    if (Test-Path $WorkerPidFile) { Remove-Item $WorkerPidFile -Force }
+    if ($ManageMaster -and (Test-Path $MasterPidFile)) { Remove-Item $MasterPidFile -Force }
+    if ($ManageWorkers -and (Test-Path $WorkerPidFile)) { Remove-Item $WorkerPidFile -Force }
 
     if ($null -eq $oldScenarioMode) {
         Remove-Item Env:\LOCUST_SCENARIO_MODE -ErrorAction SilentlyContinue
@@ -301,6 +351,12 @@ try {
         Remove-Item Env:\LOCUST_ENABLE_ORDER_PAIR_STORE -ErrorAction SilentlyContinue
     } else {
         $env:LOCUST_ENABLE_ORDER_PAIR_STORE = $oldEnableOrderPairStore
+    }
+
+    if ($null -eq $oldTokenFile) {
+        Remove-Item Env:\LOCUST_TOKEN_FILE -ErrorAction SilentlyContinue
+    } else {
+        $env:LOCUST_TOKEN_FILE = $oldTokenFile
     }
 
     Write-Host "Locust stopped." -ForegroundColor Green

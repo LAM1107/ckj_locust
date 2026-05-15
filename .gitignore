@@ -1,0 +1,22 @@
+# Python cache and virtualenv
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+
+# IDE files
+.idea/
+.qoder/
+
+# Locust outputs and runtime logs
+result/
+*.log
+locust_metrics_*.txt
+*.pid
+
+# Local test data and secrets
+config/redis_config.py
+user_token.txt
+token_keys.txt
+user_data_*.csv
+order_pairs/

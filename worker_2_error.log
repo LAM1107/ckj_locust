@@ -1,5 +1,0 @@
-[2026-05-15 13:57:44,984] DESKTOP-VBNUE4Q/INFO/locust.main: Starting Locust 2.41.6
-[2026-05-15 13:58:35,917] DESKTOP-VBNUE4Q/INFO/locust.runners: Resetting stats
-
-[2026-05-15 14:13:15,602] DESKTOP-VBNUE4Q/INFO/locust.runners: Got quit message from master, shutting down...
-[2026-05-15 14:13:15,602] DESKTOP-VBNUE4Q/INFO/locust.main: Shutting down (exit code 0)

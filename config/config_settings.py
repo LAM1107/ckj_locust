@@ -46,8 +46,8 @@ class LoadTestConfig:
 
 
 class FilePath:
-    TOKEN_FILE = "user_token.txt"
+    TOKEN_FILE = os.getenv("LOCUST_TOKEN_FILE", "user_token.txt")
     OPERATION_FILE = "operation.txt"
     REPORT_FILE = "locust_metrics.txt"
-    ORDER_PAIR_DIR = "order_pairs"
+    ORDER_PAIR_DIR = os.getenv("LOCUST_ORDER_PAIR_DIR", "order_pairs")
     ORDER_PAIR_PREFIX = "paid_order_pairs"

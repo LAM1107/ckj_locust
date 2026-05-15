@@ -1,0 +1,26 @@
+# 1. 切换目录
+cd D:\project\gacha_performance_test
+
+# 2. 运行脚本
+.\run_distributed_v2.ps1
+例子：$WorkerCount = 6，-u并发数500 则 500/6=83，每个worker分配83个用户
+解放 Locust 自身的 CPU 瓶颈
+
+locust -f case/locust_life.py
+
+
+单机多核压测命令
+./run_distributed_v2.ps1 -Mode local
+分布式压测命令
+powershell查看CPU核数
+(Get-CimInstance Win32_Processor).NumberOfCores
+
+(masterip节点：192.168.1.100)
+./run_distributed_v2.ps1 -Mode master 
+worker1：./run_distributed_v2.ps1 -Mode worker -MasterHost 192.168.1.100 -WorkerIndexOffset 0 -TotalWorkerCount 12
+worker2：./run_distributed_v2.ps1 -Mode worker -MasterHost 192.168.1.100 -WorkerIndexOffset 6 -TotalWorkerCount 12
+
+worker1负责0-6个用户
+worker2负责6-12个用户
+
+启动locust脚本

@@ -1,0 +1,31 @@
+Locust performance report
+================================================================================
+
+Run summary
+Scenario mode: single_list
+Total requests: 0
+Total failures: 0
+Failure rate: 0.00%
+Average response time: 0.00 ms
+Median response time: 0.00 ms
+Min response time: 0.00 ms
+Max response time: 0.00 ms
+P90 response time: 0.00 ms
+Requests per second: 0.00
+Failures per second: 0.00
+
+Business metrics
+Flow started: 0
+Flow succeeded: 0
+Flow failed: 0
+Flow success rate: 0.00%
+Read requests: 5812
+Write requests: 0
+App-side read/write ratio: read-only
+
+Per-endpoint stats
+Method   Name                                                           Requests   Failures    Fail% |    Avg(ms)     Median        Min        Max        P90 |        RPS     Fail/s
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+GET      /gacha/goods/v2/list                                                  0          0    0.00% |       0.00       0.00       0.00       0.00       0.00 |       0.00       0.00
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Aggregated Aggregated                                                            0          0    0.00% |       0.00       0.00       0.00       0.00       0.00 |       0.00       0.00

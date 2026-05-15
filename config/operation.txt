@@ -20,6 +20,17 @@ powershell查看CPU核数
 worker1：./run_distributed_v2.ps1 -Mode worker -MasterHost 192.168.1.100 -WorkerIndexOffset 0 -TotalWorkerCount 12
 worker2：./run_distributed_v2.ps1 -Mode worker -MasterHost 192.168.1.100 -WorkerIndexOffset 6 -TotalWorkerCount 12
 
+
+master  无ui
+.\run_distributed_v2.ps1 -Mode master -Headless -Users 300 -SpawnRate 10 -RunTime 2m -ResetStats -OnlySummary -TotalWorkerCount 6
+.\run_distributed_v2.ps1 -Mode master -Headless -Users 300 -SpawnRate 10 -RunTime 2m -ResetStats -OnlySummary -TotalWorkerCount 6 -CsvPrefix result\single_list_lite_u300_r10 -HtmlReport result\single_list_lite_u300_r10.html
+.\run_distributed_v2.ps1 -Mode worker -MasterHost 127.0.0.1 -WorkerCount 2 -WorkerIndexOffset 0 -TotalWorkerCount 6 -ScenarioMode single_list_lite -TokenFile D:\secret\user_token.txt
+
+worker
+.\run_distributed_v2.ps1 -Mode worker -MasterHost 192.168.1.100 -WorkerCount 4 -WorkerIndexOffset 2 -TotalWorkerCount 6 -ScenarioMode single_list_lite -TokenFile D:\secret\user_token.txt
+
+
+
 worker1负责0-6个用户
 worker2负责6-12个用户
 

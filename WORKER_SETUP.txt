@@ -1,0 +1,154 @@
+# Worker 机器安装与启动说明
+
+本文档给远程 `worker` 机器使用。
+
+## 1. 需要准备的内容
+
+`worker` 机器只需要这些：
+
+1. 从仓库拉取完整代码
+2. 安装 Python 3.10+
+3. 安装压测依赖
+4. 单独接收一份 `user_token.txt`
+5. 按命令启动 `worker`
+
+`worker` 机器**不需要**这些内容：
+
+- `config/redis_config.py`
+- `result/`
+- `master.log` / `worker_*.log`
+- `locust_metrics_*.txt`
+- `token_keys.txt`
+- `user_data_*.csv`
+
+## 2. 代码目录
+
+代码目录不要求和 `master` 机器一致，只要进入仓库根目录执行命令即可。
+
+例如下面这些路径都可以：
+
+- `D:\project\gacha_performance_test`
+- `E:\loadtest\gacha_performance_test`
+- `C:\work\gacha_performance_test`
+
+下面的命令以 `D:\project\gacha_performance_test` 为例。
+
+## 3. 安装命令
+
+在 PowerShell 中执行：
+
+```powershell
+cd D:\project\gacha_performance_test
+py -m venv .venv
+.venv\Scripts\activate
+python -m pip install --upgrade pip
+pip install locust==2.41.6
+```
+
+安装完成后可验证：
+
+```powershell
+locust --version
+```
+
+期望看到类似：
+
+```text
+locust 2.41.6
+```
+
+## 4. token 文件
+
+压测运行时需要一份单独提供的 `user_token.txt`。
+
+建议把它放在仓库外，例如：
+
+```text
+D:\secret\user_token.txt
+```
+
+说明：
+
+- `user_token.txt` 不放进 Git 仓库
+- `worker` 不需要 `redis_config.py`
+- `worker` 只要拿到可用的 `user_token.txt` 就能执行大多数单接口压测
+
+## 5. 启动命令
+
+### 场景：1 台 master 机器 + 1 台 worker 机器
+
+假设：
+
+- `master` 机器 IP：`192.168.1.100`
+- 当前场景：`single_list_lite`
+- 本机启动 4 个 worker 进程
+- token 文件路径：`D:\secret\user_token.txt`
+- 全部 worker 总数：`6`
+- 当前机器负责的 worker 下标范围：`2~5`
+
+执行命令：
+
+```powershell
+cd D:\project\gacha_performance_test
+.venv\Scripts\activate
+.\run_distributed_v2.ps1 -Mode worker -Headless -MasterHost 192.168.1.100 -WorkerCount 4 -WorkerIndexOffset 2 -TotalWorkerCount 6 -ScenarioMode single_list_lite -TokenFile D:\secret\user_token.txt
+```
+
+## 6. 参数说明
+
+- `-Mode worker`：当前机器作为分布式 worker
+- `-Headless`：后台运行，不等待按 Enter
+- `-MasterHost 192.168.1.100`：连接 master 机器 IP
+- `-WorkerCount 4`：当前机器启动 4 个 worker 进程
+- `-WorkerIndexOffset 2`：当前机器从第 2 号 worker 开始编号
+- `-TotalWorkerCount 6`：整个集群总共有 6 个 worker
+- `-ScenarioMode single_list_lite`：执行轻量版单接口列表压测
+- `-TokenFile D:\secret\user_token.txt`：从仓库外部读取 token 文件
+
+## 7. 运行前检查
+
+启动前请确认：
+
+1. 能访问 `master` 机器 IP
+2. 本机仓库代码版本与 `master` 一致
+3. `locust --version` 为 `2.41.6`
+4. `user_token.txt` 文件存在
+5. `user_token.txt` 中 token 数量足够
+
+## 8. 常见报错
+
+### 8.1 `No available token`
+
+说明 token 不够，或 `user_token.txt` 路径不对。
+
+检查：
+
+```powershell
+Test-Path D:\secret\user_token.txt
+```
+
+### 8.2 连不上 master
+
+检查：
+
+- `MasterHost` IP 是否正确
+- `master` 是否已经先启动
+- 两台机器网络是否互通
+
+### 8.3 worker 进程启动后很快退出
+
+优先检查：
+
+- token 文件是否存在
+- 仓库代码是否最新
+- `TotalWorkerCount` / `WorkerIndexOffset` 是否与 master 侧配置一致
+
+## 9. 结束运行
+
+如果当前命令窗口正在运行，按：
+
+```text
+Ctrl+C
+```
+
+即可停止当前机器上的 worker 进程。

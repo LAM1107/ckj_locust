@@ -28,6 +28,13 @@ if (-not $ScriptPath) { $ScriptPath = Split-Path -Parent $MyInvocation.MyCommand
 Set-Location $ScriptPath
 
 $LocustFile = "case/locust_life.py"
+try {
+    $LocustExecutable = (Get-Command "locust" -ErrorAction Stop).Source
+    $PowerShellExecutable = (Get-Command "powershell" -ErrorAction Stop).Source
+} catch {
+    throw "Unable to resolve required executable: $($_.Exception.Message)"
+}
+
 $MasterPidFile = "locust_master.pid"
 $WorkerPidFile = if ($Mode -eq "worker") {
     "locust_workers_{0}_{1}.pid" -f $WorkerIndexOffset, $WorkerCount
@@ -97,6 +104,38 @@ function Set-LocustEnvVar {
 
     Set-Item -Path "Env:$Name" -Value $Value
     Write-Host "Set $Name=$Value" -ForegroundColor DarkGray
+}
+
+function Convert-ToArgumentString {
+    param(
+        [string[]]$Arguments
+    )
+
+    $escaped = foreach ($arg in $Arguments) {
+        if ($null -eq $arg) {
+            continue
+        }
+
+        if ($arg -match '[\s"]') {
+            '"' + ($arg -replace '"', '\"') + '"'
+        } else {
+            $arg
+        }
+    }
+
+    return ($escaped -join " ")
+}
+
+function Escape-SingleQuotedPowerShellString {
+    param(
+        [string]$Value
+    )
+
+    if ($null -eq $Value) {
+        return ""
+    }
+
+    return $Value.Replace("'", "''")
 }
 
 function Ensure-ParentDirectory {
@@ -186,6 +225,29 @@ function Get-WorkerArgumentList {
     return $args
 }
 
+function Wait-ManagedProcesses {
+    if ($ManageMaster -and (Test-Path $MasterPidFile)) {
+        $masterPid = Get-Content $MasterPidFile
+        try {
+            Wait-Process -Id $masterPid
+        } catch {
+            Write-Host "Master process already exited." -ForegroundColor DarkGray
+        }
+        return
+    }
+
+    if ($ManageWorkers -and (Test-Path $WorkerPidFile)) {
+        $workerPids = Get-Content $WorkerPidFile | Where-Object { $_ -match '^\d+$' }
+        if ($workerPids.Count -gt 0) {
+            try {
+                Wait-Process -Id $workerPids
+            } catch {
+                Write-Host "One or more worker processes already exited." -ForegroundColor DarkGray
+            }
+        }
+    }
+}
+
 Stop-LocustSafely -StopMaster:$ManageMaster -StopWorkers:$ManageWorkers
 
 Write-Host "Cleaning up old PID files..." -ForegroundColor Yellow
@@ -240,8 +302,9 @@ try {
         Write-Host "Starting Locust Master..." -ForegroundColor Green
         Write-Host ("Master args: " + ($masterArgs -join " ")) -ForegroundColor DarkGray
 
-        $master = Start-Process "locust" `
+        $master = Start-Process $LocustExecutable `
             -ArgumentList $masterArgs `
+            -WorkingDirectory $ScriptPath `
             -PassThru `
             -RedirectStandardOutput "master.log" `
             -RedirectStandardError "master_error.log"
@@ -262,13 +325,21 @@ try {
             1..$WorkerCount | ForEach-Object {
                 $workerNumber = $_
                 $workerIndex = $WorkerIndexOffset + $workerNumber - 1
-                $env:LOCUST_WORKER_INDEX = "$workerIndex"
-                $env:LOCUST_WORKER_COUNT = "$TotalWorkerCount"
 
                 $workerArgs = Get-WorkerArgumentList
+                $workerArgumentString = Convert-ToArgumentString -Arguments $workerArgs
+                $escapedScriptPath = Escape-SingleQuotedPowerShellString -Value $ScriptPath
+                $escapedLocustExecutable = Escape-SingleQuotedPowerShellString -Value $LocustExecutable
+                $workerCommand = @(
+                    "`$env:LOCUST_WORKER_INDEX = '$workerIndex'"
+                    "`$env:LOCUST_WORKER_COUNT = '$TotalWorkerCount'"
+                    "Set-Location '$escapedScriptPath'"
+                    "& '$escapedLocustExecutable' $workerArgumentString"
+                ) -join "; "
 
-                $worker = Start-Process "locust" `
-                    -ArgumentList $workerArgs `
+                $worker = Start-Process $PowerShellExecutable `
+                    -ArgumentList @("-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", $workerCommand) `
+                    -WorkingDirectory $ScriptPath `
                     -PassThru `
                     -RedirectStandardOutput "worker_$workerNumber.log" `
                     -RedirectStandardError "worker_${workerNumber}_error.log"
@@ -311,14 +382,7 @@ try {
 
     if ($Headless) {
         Write-Host "Headless mode is running. Use Ctrl+C or wait for run-time to finish." -ForegroundColor Yellow
-        if (Test-Path $MasterPidFile) {
-            $masterPid = Get-Content $MasterPidFile
-            try {
-                Wait-Process -Id $masterPid
-            } catch {
-                Write-Host "Master process already exited." -ForegroundColor DarkGray
-            }
-        }
+        Wait-ManagedProcesses
     } else {
         Write-Host "Press Enter to stop this Locust instance..." -ForegroundColor Yellow
         Read-Host

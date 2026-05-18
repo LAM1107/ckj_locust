@@ -76,6 +76,32 @@ function Get-ProcessCommandLineMap {
     return $map
 }
 
+function Get-ListeningProcessIdsByPort {
+    param(
+        [int]$Port
+    )
+
+    if ($Port -le 0) {
+        return @()
+    }
+
+    try {
+        $connections = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
+    } catch {
+        return @()
+    }
+
+    if (-not $connections) {
+        return @()
+    }
+
+    return $connections |
+        Select-Object -ExpandProperty OwningProcess |
+        Where-Object { $_ -is [int] -or $_ -match '^\d+$' } |
+        ForEach-Object { [int]$_ } |
+        Sort-Object -Unique
+}
+
 function Stop-ProcessTreeById {
     param(
         [int]$ProcessId,
@@ -173,6 +199,31 @@ function Stop-StaleLocustProcesses {
     return $stoppedAny
 }
 
+function Stop-ListeningProcessesOnPort {
+    param(
+        [int]$Port,
+        [hashtable]$ProcessMap
+    )
+
+    $stoppedAny = $false
+    $listeningPids = Get-ListeningProcessIdsByPort -Port $Port
+    foreach ($listeningPid in $listeningPids) {
+        $process = $ProcessMap[$listeningPid]
+        $name = if ($process) { $process.Name } else { "unknown" }
+        $commandLine = if ($process) { $process.CommandLine } else { "" }
+
+        Write-Host (
+            "Found listener on port $Port: PID=$listeningPid, Name=$name, CommandLine=$commandLine"
+        ) -ForegroundColor DarkGray
+
+        if (Stop-ProcessTreeById -ProcessId $listeningPid -ProcessMap $ProcessMap) {
+            $stoppedAny = $true
+        }
+    }
+
+    return $stoppedAny
+}
+
 function Stop-LocustSafely {
     param(
         [bool]$StopMaster = $true,
@@ -197,6 +248,12 @@ function Stop-LocustSafely {
 
     if (Stop-StaleLocustProcesses -StopMaster:$StopMaster -StopWorkers:$StopWorkers) {
         $stoppedAny = $true
+    }
+
+    if ($StopMaster) {
+        if (Stop-ListeningProcessesOnPort -Port $WebPort -ProcessMap $processMap) {
+            $stoppedAny = $true
+        }
     }
 
     if ($stoppedAny) {

@@ -1,11 +1,15 @@
 import csv
 import os
+import threading
 from queue import Queue
 
 from config.config_settings import EnvConfig, FilePath, LoadTestConfig
 
 
 TOKEN_QUEUE = Queue()
+TOKEN_POOL = []
+TOKEN_POOL_LOCK = threading.Lock()
+TOKEN_POOL_INDEX = 0
 
 
 def _normalize_worker_scope(worker_index=None, worker_count=None):
@@ -20,6 +24,8 @@ def _normalize_worker_scope(worker_index=None, worker_count=None):
 
 
 def load_tokens(worker_index=None, worker_count=None):
+    global TOKEN_POOL_INDEX
+
     file_path = os.path.join(os.getcwd(), FilePath.TOKEN_FILE)
     worker_index, worker_count = _normalize_worker_scope(worker_index, worker_count)
 
@@ -35,11 +41,27 @@ def load_tokens(worker_index=None, worker_count=None):
     if worker_count > 1:
         tokens = tokens[worker_index::worker_count]
 
+    TOKEN_POOL.clear()
+    TOKEN_POOL.extend(tokens)
+    TOKEN_POOL_INDEX = 0
+
     for token in tokens:
         TOKEN_QUEUE.put(token)
 
     print(f"加载 {len(tokens)} 个token,用于worker {worker_index}/{worker_count}")
     return len(tokens)
+
+
+def get_reusable_token():
+    global TOKEN_POOL_INDEX
+
+    if not TOKEN_POOL:
+        raise IndexError("没有可用的token，请先加载token。")
+
+    with TOKEN_POOL_LOCK:
+        token = TOKEN_POOL[TOKEN_POOL_INDEX % len(TOKEN_POOL)]
+        TOKEN_POOL_INDEX += 1
+        return token
 
 
 def write_file(file_list, keys):

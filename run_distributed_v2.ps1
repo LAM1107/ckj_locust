@@ -44,6 +44,132 @@ $WorkerPidFile = if ($Mode -eq "worker") {
 $ManageMaster = $Mode -in "master", "local"
 $ManageWorkers = $Mode -in "worker", "local"
 
+function Get-LocustPidFiles {
+    param(
+        [bool]$IncludeMaster = $true,
+        [bool]$IncludeWorkers = $true
+    )
+
+    $files = @()
+
+    if ($IncludeMaster) {
+        $files += Get-Item -Path $MasterPidFile -ErrorAction SilentlyContinue
+    }
+
+    if ($IncludeWorkers) {
+        $files += Get-ChildItem -Path "locust_workers*.pid" -ErrorAction SilentlyContinue
+    }
+
+    return $files | Where-Object { $null -ne $_ } | Sort-Object -Property FullName -Unique
+}
+
+function Get-ProcessCommandLineMap {
+    $map = @{}
+    $processes = Get-CimInstance Win32_Process -ErrorAction SilentlyContinue
+    foreach ($process in $processes) {
+        $map[[int]$process.ProcessId] = $process
+    }
+
+    return $map
+}
+
+function Stop-ProcessTreeById {
+    param(
+        [int]$ProcessId,
+        [hashtable]$ProcessMap
+    )
+
+    if (-not $ProcessMap.ContainsKey($ProcessId)) {
+        return $false
+    }
+
+    $stoppedAny = $false
+    $children = $ProcessMap.Values | Where-Object { [int]$_.ParentProcessId -eq $ProcessId }
+    foreach ($child in $children) {
+        if (Stop-ProcessTreeById -ProcessId ([int]$child.ProcessId) -ProcessMap $ProcessMap) {
+            $stoppedAny = $true
+        }
+    }
+
+    try {
+        $process = Get-Process -Id $ProcessId -ErrorAction SilentlyContinue
+        if ($process) {
+            Write-Host "Stopping process tree node PID: $ProcessId ($($process.ProcessName))..." -ForegroundColor Gray
+            Stop-Process -Id $ProcessId -Force -ErrorAction SilentlyContinue
+            $stoppedAny = $true
+        }
+    } catch {
+        Write-Host "Process tree node PID: $ProcessId already stopped or not found." -ForegroundColor DarkGray
+    }
+
+    return $stoppedAny
+}
+
+function Test-CommandLineMatches {
+    param(
+        [string]$CommandLine,
+        [string[]]$RequiredPatterns
+    )
+
+    if ([string]::IsNullOrWhiteSpace($CommandLine)) {
+        return $false
+    }
+
+    foreach ($pattern in $RequiredPatterns) {
+        if ($CommandLine -notlike "*$pattern*") {
+            return $false
+        }
+    }
+
+    return $true
+}
+
+function Stop-StaleLocustProcesses {
+    param(
+        [bool]$StopMaster = $true,
+        [bool]$StopWorkers = $true
+    )
+
+    $processMap = Get-ProcessCommandLineMap
+    if ($processMap.Count -eq 0) {
+        return $false
+    }
+
+    $stoppedAny = $false
+    $locustFilePattern = $LocustFile.Replace("/", "\")
+    $targets = @()
+
+    if ($StopMaster) {
+        $targets += @{
+            Label = "master"
+            Patterns = @($locustFilePattern, "--master")
+        }
+    }
+
+    if ($StopWorkers) {
+        $targets += @{
+            Label = "worker"
+            Patterns = @($locustFilePattern, "--worker")
+        }
+    }
+
+    foreach ($target in $targets) {
+        $matchingProcesses = $processMap.Values |
+            Where-Object { Test-CommandLineMatches -CommandLine $_.CommandLine -RequiredPatterns $target.Patterns } |
+            Sort-Object -Property ProcessId -Unique
+
+        foreach ($process in $matchingProcesses) {
+            $processId = [int]$process.ProcessId
+            Write-Host "Found stale Locust $($target.Label) process by command line (PID: $processId)." -ForegroundColor DarkGray
+            if (Stop-ProcessTreeById -ProcessId $processId -ProcessMap $processMap) {
+                $stoppedAny = $true
+            }
+        }
+    }
+
+    return $stoppedAny
+}
+
 function Stop-LocustSafely {
     param(
         [bool]$StopMaster = $true,
@@ -53,36 +179,21 @@ function Stop-LocustSafely {
     Write-Host "Stopping Locust processes safely..." -ForegroundColor Yellow
     $stoppedAny = $false
 
-    if ($StopMaster -and (Test-Path $MasterPidFile)) {
-        $masterPid = Get-Content $MasterPidFile
-        try {
-            $process = Get-Process -Id $masterPid -ErrorAction SilentlyContinue
-            if ($process) {
-                Write-Host "Stopping Master process (PID: $masterPid)..." -ForegroundColor Gray
-                Stop-Process -Id $masterPid -Force -ErrorAction SilentlyContinue
-                $stoppedAny = $true
-            }
-        } catch {
-            Write-Host "Master process (PID: $masterPid) already stopped or not found." -ForegroundColor DarkGray
-        }
-    }
-
-    if ($StopWorkers -and (Test-Path $WorkerPidFile)) {
-        $workerPids = Get-Content $WorkerPidFile
-        foreach ($workerPid in $workerPids) {
-            if ($workerPid -match '^\d+$') {
-                try {
-                    $process = Get-Process -Id $workerPid -ErrorAction SilentlyContinue
-                    if ($process) {
-                        Write-Host "Stopping Worker process (PID: $workerPid)..." -ForegroundColor Gray
-                        Stop-Process -Id $workerPid -Force -ErrorAction SilentlyContinue
-                        $stoppedAny = $true
-                    }
-                } catch {
-                    Write-Host "Worker process (PID: $workerPid) already stopped or not found." -ForegroundColor DarkGray
+    $processMap = Get-ProcessCommandLineMap
+    $pidFiles = Get-LocustPidFiles -IncludeMaster:$StopMaster -IncludeWorkers:$StopWorkers
+    foreach ($pidFile in $pidFiles) {
+        $pids = Get-Content $pidFile.FullName -ErrorAction SilentlyContinue
+        foreach ($pid in $pids) {
+            if ($pid -match '^\d+$') {
+                if (Stop-ProcessTreeById -ProcessId ([int]$pid) -ProcessMap $processMap) {
+                    $stoppedAny = $true
                 }
             }
         }
+    }
+
+    if (Stop-StaleLocustProcesses -StopMaster:$StopMaster -StopWorkers:$StopWorkers) {
+        $stoppedAny = $true
     }
 
     if ($stoppedAny) {
@@ -251,8 +362,9 @@ function Wait-ManagedProcesses {
 Stop-LocustSafely -StopMaster:$ManageMaster -StopWorkers:$ManageWorkers
 
 Write-Host "Cleaning up old PID files..." -ForegroundColor Yellow
-if ($ManageMaster -and (Test-Path $MasterPidFile)) { Remove-Item $MasterPidFile -Force }
-if ($ManageWorkers -and (Test-Path $WorkerPidFile)) { Remove-Item $WorkerPidFile -Force }
+Get-LocustPidFiles -IncludeMaster:$ManageMaster -IncludeWorkers:$ManageWorkers | ForEach-Object {
+    Remove-Item $_.FullName -Force -ErrorAction SilentlyContinue
+}
 
 $oldScenarioMode = $env:LOCUST_SCENARIO_MODE
 $oldEnablePrometheus = $env:LOCUST_ENABLE_PROMETHEUS
@@ -306,6 +418,7 @@ try {
             -ArgumentList $masterArgs `
             -WorkingDirectory $ScriptPath `
             -PassThru `
+            -WindowStyle Hidden `
             -RedirectStandardOutput "master.log" `
             -RedirectStandardError "master_error.log"
 
@@ -341,6 +454,7 @@ try {
                     -ArgumentList @("-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", $workerCommand) `
                     -WorkingDirectory $ScriptPath `
                     -PassThru `
+                    -WindowStyle Hidden `
                     -RedirectStandardOutput "worker_$workerNumber.log" `
                     -RedirectStandardError "worker_${workerNumber}_error.log"
 
@@ -390,8 +504,9 @@ try {
 } finally {
     Stop-LocustSafely -StopMaster:$ManageMaster -StopWorkers:$ManageWorkers
 
-    if ($ManageMaster -and (Test-Path $MasterPidFile)) { Remove-Item $MasterPidFile -Force }
-    if ($ManageWorkers -and (Test-Path $WorkerPidFile)) { Remove-Item $WorkerPidFile -Force }
+    Get-LocustPidFiles -IncludeMaster:$ManageMaster -IncludeWorkers:$ManageWorkers | ForEach-Object {
+        Remove-Item $_.FullName -Force -ErrorAction SilentlyContinue
+    }
 
     if ($null -eq $oldScenarioMode) {
         Remove-Item Env:\LOCUST_SCENARIO_MODE -ErrorAction SilentlyContinue

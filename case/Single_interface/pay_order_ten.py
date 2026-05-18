@@ -9,7 +9,6 @@ from read_utils.order_pair_store import record_order_pair
 
 
 def _build_payload():
-    # 每次请求都生成新 payload，避免模板数据被不同用户互相污染。
     payload = deepcopy(LoadTestConfig.PAY_REQUEST_TEMPLATE)
     if not payload:
         payload = {
@@ -24,8 +23,8 @@ def _build_payload():
 
 
 def pay_order_once(task_set):
+    """✅ 生成真实订单，必须写入（single_pay_result 场景用）"""
     payload = _build_payload()
-    # 应用侧写请求数，后面用来和 TDSQL-C 的 RW TPS/QPS 对照。
     increment_write_request()
 
     with task_set.client.post(
@@ -49,21 +48,26 @@ def pay_order_once(task_set):
             response.failure(f"Invalid JSON: {exc}")
             return None
 
-        order_no = body.get("orderNo")
-        if not order_no:
+        real_order_no = body.get("orderNo")
+        if not real_order_no:
             response.failure("Missing orderNo in pay response")
             return None
 
-        # 链路场景和混合场景直接读取当前用户内存里的最新 orderNo。
-        task_set.user.order_no = order_no
-        # single_pay_result 会复用之前支付压测落盘的 token/orderNo 对。
-        record_order_pair(task_set.user.user_token, order_no)
-        log_debug(f"pay success, orderNo={order_no}")
+        # ✅ 写入 token + CSV orderNo + 接口返回 orderNo
+        record_order_pair(
+            task_set.user.user_token,
+            task_set.user.order_no,  # CSV 中的 orderNo
+            real_order_no
+        )
+
+        task_set.user.order_no = real_order_no
+        log_debug(f"pay success, orderNo={real_order_no}")
         response.success()
-        return order_no
+        return real_order_no
 
 
 def pay_order_once_lite(task_set):
+    """❌ 只拿字典数据，不写入（性能压测用）"""
     payload = _build_payload()
 
     response = task_set.client.post(
@@ -81,14 +85,12 @@ def pay_order_once_lite(task_set):
     except Exception:
         return None
 
-    order_no = body.get("orderNo")
-    if not order_no:
+    real_order_no = body.get("orderNo")
+    if not real_order_no:
         return None
 
-    task_set.user.order_no = order_no
-    if LoadTestConfig.ENABLE_ORDER_PAIR_STORE:
-        record_order_pair(task_set.user.user_token, order_no)
-    return order_no
+    task_set.user.order_no = real_order_no  # ✅ 只更新内存
+    return real_order_no
 
 
 class CheckPayOrder(SequentialTaskSet):

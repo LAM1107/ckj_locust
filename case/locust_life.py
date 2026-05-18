@@ -11,8 +11,7 @@ if LoadTestConfig.ENABLE_METRICS_REPORT:
 if LoadTestConfig.ENABLE_PROMETHEUS:
     import prometheus_exporter  # noqa: F401 - 注册 Prometheus 监听
 
-if LoadTestConfig.ENABLE_ORDER_PAIR_STORE:
-    import read_utils.order_pair_store  # noqa: F401 - 注册订单对落盘监听
+import read_utils.order_pair_store  # noqa: F401 - 注册订单对落盘监听
 
 
 def get_scenario_tasks():
@@ -80,7 +79,7 @@ def on_locust_init(environment, **kwargs):
 
 
 class WebsiteUser(FastHttpUser):
-    wait_time = between(LoadTestConfig.WAIT_MIN, LoadTestConfig.WAIT_MAX)
+    # wait_time = between(LoadTestConfig.WAIT_MIN, LoadTestConfig.WAIT_MAX)
     host = EnvConfig.BASE_URL
     tasks = get_scenario_tasks()
 

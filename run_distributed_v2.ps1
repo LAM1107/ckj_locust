@@ -183,9 +183,9 @@ function Stop-LocustSafely {
     $pidFiles = Get-LocustPidFiles -IncludeMaster:$StopMaster -IncludeWorkers:$StopWorkers
     foreach ($pidFile in $pidFiles) {
         $pids = Get-Content $pidFile.FullName -ErrorAction SilentlyContinue
-        foreach ($pid in $pids) {
-            if ($pid -match '^\d+$') {
-                if (Stop-ProcessTreeById -ProcessId ([int]$pid) -ProcessMap $processMap) {
+        foreach ($processIdText in $pids) {
+            if ($processIdText -match '^\d+$') {
+                if (Stop-ProcessTreeById -ProcessId ([int]$processIdText) -ProcessMap $processMap) {
                     $stoppedAny = $true
                 }
             }
@@ -274,15 +274,15 @@ function Get-MasterArgumentList {
         [bool]$StartWebUi
     )
 
-    $args = @("-f", $LocustFile, "--master")
+    $masterArgList = @("-f", $LocustFile, "--master")
     $expectedWorkers = 0
 
     if ($StartWebUi) {
-        $args += @("--web-port", "$WebPort")
+        $masterArgList += @("--web-port", "$WebPort")
     }
 
     if ($Headless) {
-        $args += "--headless"
+        $masterArgList += "--headless"
 
         if ($Users -le 0) {
             throw "When -Headless is used, -Users must be greater than 0."
@@ -291,22 +291,22 @@ function Get-MasterArgumentList {
             throw "When -Headless is used, -SpawnRate must be greater than 0."
         }
 
-        $args += @("-u", "$Users", "-r", "$SpawnRate")
+        $masterArgList += @("-u", "$Users", "-r", "$SpawnRate")
 
         if (-not [string]::IsNullOrWhiteSpace($RunTime)) {
-            $args += @("-t", $RunTime)
+            $masterArgList += @("-t", $RunTime)
         }
         if ($ResetStats) {
-            $args += "--reset-stats"
+            $masterArgList += "--reset-stats"
         }
         if ($OnlySummary) {
-            $args += "--only-summary"
+            $masterArgList += "--only-summary"
         }
         if (-not [string]::IsNullOrWhiteSpace($CsvPrefix)) {
-            $args += @("--csv", $CsvPrefix)
+            $masterArgList += @("--csv", $CsvPrefix)
         }
         if (-not [string]::IsNullOrWhiteSpace($HtmlReport)) {
-            $args += @("--html", $HtmlReport)
+            $masterArgList += @("--html", $HtmlReport)
         }
         if ($Mode -eq "local" -and $WorkerCount -gt 0) {
             $expectedWorkers = $WorkerCount
@@ -319,21 +319,21 @@ function Get-MasterArgumentList {
         }
 
         if ($expectedWorkers -gt 0) {
-            $args += @("--expect-workers", "$expectedWorkers")
+            $masterArgList += @("--expect-workers", "$expectedWorkers")
         }
     }
 
-    return $args
+    return $masterArgList
 }
 
 function Get-WorkerArgumentList {
-    $args = @("-f", $LocustFile, "--worker", "--master-host", $MasterHost)
+    $workerArgList = @("-f", $LocustFile, "--worker", "--master-host", $MasterHost)
 
     if ($ResetStats) {
-        $args += "--reset-stats"
+        $workerArgList += "--reset-stats"
     }
 
-    return $args
+    return $workerArgList
 }
 
 function Wait-ManagedProcesses {
@@ -495,10 +495,10 @@ try {
     Write-Host ""
 
     if ($Headless) {
-        Write-Host "Headless mode is running. Use Ctrl+C or wait for run-time to finish." -ForegroundColor Yellow
+        Write-Host "Headless mode is running. 使用 Ctrl+C 或等待 run-time 结束." -ForegroundColor Yellow
         Wait-ManagedProcesses
     } else {
-        Write-Host "Press Enter to stop this Locust instance..." -ForegroundColor Yellow
+        Write-Host "Press Enter to 结束 Locust 实例..." -ForegroundColor Yellow
         Read-Host
     }
 } finally {

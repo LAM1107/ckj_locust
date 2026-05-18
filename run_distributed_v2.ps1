@@ -213,7 +213,7 @@ function Stop-ListeningProcessesOnPort {
         $commandLine = if ($process) { $process.CommandLine } else { "" }
 
         Write-Host (
-            "Found listener on port $Port: PID=$listeningPid, Name=$name, CommandLine=$commandLine"
+            "Found listener on port ${Port}: PID=$listeningPid, Name=$name, CommandLine=$commandLine"
         ) -ForegroundColor DarkGray
 
         if (Stop-ProcessTreeById -ProcessId $listeningPid -ProcessMap $ProcessMap) {

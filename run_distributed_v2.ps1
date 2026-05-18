@@ -43,6 +43,9 @@ $WorkerPidFile = if ($Mode -eq "worker") {
 }
 $ManageMaster = $Mode -in "master", "local"
 $ManageWorkers = $Mode -in "worker", "local"
+$WorkerCountWasProvided = $PSBoundParameters.ContainsKey("WorkerCount")
+$WorkerIndexOffsetWasProvided = $PSBoundParameters.ContainsKey("WorkerIndexOffset")
+$TotalWorkerCountWasProvided = $PSBoundParameters.ContainsKey("TotalWorkerCount")
 
 function Get-LocustPidFiles {
     param(
@@ -393,18 +396,41 @@ try {
     Ensure-ParentDirectory -PathValue $HtmlReport
 
     if ($Mode -in "worker", "local") {
+        Write-Host (
+            "Worker config before normalization: " +
+            "WorkerIndexOffset=$WorkerIndexOffset " +
+            "(provided=$WorkerIndexOffsetWasProvided), " +
+            "WorkerCount=$WorkerCount " +
+            "(provided=$WorkerCountWasProvided), " +
+            "TotalWorkerCount=$TotalWorkerCount " +
+            "(provided=$TotalWorkerCountWasProvided)"
+        ) -ForegroundColor DarkGray
+
         if ($WorkerCount -eq 0) {
             $Cores = [Environment]::ProcessorCount
             $WorkerCount = [Math]::Max(1, $Cores - 2)
+            Write-Host "WorkerCount was 0, defaulting to $WorkerCount based on CPU cores." -ForegroundColor DarkGray
         }
 
         if ($TotalWorkerCount -eq 0) {
             $TotalWorkerCount = $WorkerCount
+            Write-Host "TotalWorkerCount was 0, defaulting to $TotalWorkerCount." -ForegroundColor DarkGray
         }
 
         if (($WorkerIndexOffset + $WorkerCount) -gt $TotalWorkerCount) {
-            throw "WorkerIndexOffset + WorkerCount must be <= TotalWorkerCount"
+            throw (
+                "WorkerIndexOffset + WorkerCount must be <= TotalWorkerCount. " +
+                "Got WorkerIndexOffset=$WorkerIndexOffset, WorkerCount=$WorkerCount, " +
+                "TotalWorkerCount=$TotalWorkerCount."
+            )
         }
+
+        Write-Host (
+            "Worker config after normalization: " +
+            "WorkerIndexOffset=$WorkerIndexOffset, " +
+            "WorkerCount=$WorkerCount, " +
+            "TotalWorkerCount=$TotalWorkerCount"
+        ) -ForegroundColor DarkGray
     }
 
     if ($Mode -in "master", "local") {

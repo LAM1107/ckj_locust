@@ -12,11 +12,14 @@ def _build_payload():
     payload = deepcopy(LoadTestConfig.PAY_REQUEST_TEMPLATE)
     if not payload:
         payload = {
-            "goodsId": 1,
-            "quantity": 1,
-            "channel": EnvConfig.CHANNEL,
-            "payType": "WECHAT",
-        }
+    "goodsId": 234,
+    "goodsNum": 10,
+    "couponId": 0,
+    "order_type": "TEN",
+    "origin": "",
+    "entrance": "卡池页",
+    "channel": "MINI_APP"
+}
     else:
         payload.setdefault("channel", EnvConfig.CHANNEL)
     return payload

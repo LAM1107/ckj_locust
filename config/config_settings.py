@@ -16,11 +16,13 @@ class EnvConfig:
 
 
 class ApiPaths:
+    
 
     GOODS_LIST = "/gacha/goods/v2/list"
     GOODS_DETAIL = "/gacha/goods/one/v2/234"
     WX_PAY = "/gacha/pay/wx"
     PAY_RESULT = "/gacha/pay/result"
+    COUPON_LIST = "/gacha/coupon/all"
     
 
 

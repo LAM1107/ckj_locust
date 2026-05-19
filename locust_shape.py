@@ -13,10 +13,10 @@ class SeckillRampUpShape(LoadTestShape):
         {"duration": 300, "users": 100, "spawn_rate": 10},
         
         # 阶段 2：300-600 秒，300 用户
-        {"duration": 300, "users": 300, "spawn_rate": 20},
+        {"duration": 600, "users": 300, "spawn_rate": 20},
         
         # 阶段 3：600-900 秒，500 用户
-        {"duration": 300, "users": 500, "spawn_rate": 20},
+        {"duration": 900, "users": 500, "spawn_rate": 20},
     ]
 
     def tick(self):

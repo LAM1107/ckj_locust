@@ -3,7 +3,7 @@ from locust import FastHttpUser, between, events
 from config.config_settings import EnvConfig, LoadTestConfig
 from read_utils.user_context import assign_user_identity, ensure_runtime_data_loaded
 from read_utils.user_context import should_load_on_this_runner
-
+from locust_shape import SeckillRampUpShape
 
 if LoadTestConfig.ENABLE_METRICS_REPORT:
     import config.config  # noqa: F401 - 注册退出时报表监听
@@ -17,11 +17,6 @@ import read_utils.order_pair_store  # noqa: F401 - 注册订单对落盘监听
 def get_scenario_tasks():
     # 按场景懒加载任务集，轻量单接口压测时不导入支付、链路、混合场景代码。
     mode = LoadTestConfig.SCENARIO_MODE
-
-    if mode == "single_list":
-        from case.Single_interface.gacha_list import CheckGachaList
-
-        return [CheckGachaList]
 
     if mode == "single_list_lite":
         from case.Single_interface.gacha_list import CheckGachaListLite
@@ -65,7 +60,7 @@ def get_scenario_tasks():
 
     raise ValueError(
         "LoadTestConfig.SCENARIO_MODE must be one of: "
-        "flow_pay_result, flow_pay_result_lite, mixed, single_list, "
+        "flow_pay_result, flow_pay_result_lite, mixed, "
         "single_list_lite, single_pay, single_pay_lite, "
         "single_pay_result, single_pay_result_lite"
     )
@@ -82,6 +77,7 @@ class WebsiteUser(FastHttpUser):
     # wait_time = between(LoadTestConfig.WAIT_MIN, LoadTestConfig.WAIT_MAX)
     host = EnvConfig.BASE_URL
     tasks = get_scenario_tasks()
+    shape_class = SeckillRampUpShape
 
     def on_start(self):
         assign_user_identity(self)

@@ -17,6 +17,11 @@ import read_utils.order_pair_store  # noqa: F401 - 注册订单对落盘监听
 def get_scenario_tasks():
     # 按场景懒加载任务集，轻量单接口压测时不导入支付、链路、混合场景代码。
     mode = LoadTestConfig.SCENARIO_MODE
+    
+    if mode == "single_list_detail":
+        from case.Single_interface.gacha_list_detail import CheckGachaListDetail
+
+        return [CheckGachaListDetail]
 
     if mode == "single_list_lite":
         from case.Single_interface.gacha_list import CheckGachaListLite

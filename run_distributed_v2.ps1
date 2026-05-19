@@ -578,7 +578,7 @@ try {
     Write-Host ""
 
     if ($Headless) {
-        Write-Host "Headless mode is running. 使用 Ctrl+C 或等待 run-time 结束." -ForegroundColor Yellow
+        Write-Host "Headless mode is running. use Ctrl+C or wait for run-time to end." -ForegroundColor Yellow
         Wait-ManagedProcesses
     } else {
         Write-Host "Press Enter to 结束 Locust 实例..." -ForegroundColor Yellow

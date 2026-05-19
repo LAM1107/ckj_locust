@@ -97,7 +97,7 @@ def pay_order_once_lite(task_set):
 
 
 class CheckPayOrder(SequentialTaskSet):
-    # wait_time = between(LoadTestConfig.WAIT_MIN, LoadTestConfig.WAIT_MAX)
+    wait_time = between(LoadTestConfig.WAIT_MIN, LoadTestConfig.WAIT_MAX)
 
     @task
     def wx_pay(self):
@@ -105,7 +105,7 @@ class CheckPayOrder(SequentialTaskSet):
 
 
 class CheckPayOrderLite(SequentialTaskSet):
-    # wait_time = between(LoadTestConfig.WAIT_MIN, LoadTestConfig.WAIT_MAX)
+    wait_time = between(LoadTestConfig.WAIT_MIN, LoadTestConfig.WAIT_MAX)
 
     def on_start(self):
         self.headers = {

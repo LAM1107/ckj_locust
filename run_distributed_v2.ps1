@@ -581,7 +581,7 @@ try {
         Write-Host "Headless mode is running. use Ctrl+C or wait for run-time to end." -ForegroundColor Yellow
         Wait-ManagedProcesses
     } else {
-        Write-Host "Press Enter to 结束 Locust 实例..." -ForegroundColor Yellow
+        Write-Host "Press Enter to end Locust instances..." -ForegroundColor Yellow
         Read-Host
     }
 } finally {

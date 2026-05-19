@@ -27,6 +27,7 @@ class ApiPaths:
 
 
 class LoadTestConfig:
+    PAY_REQUEST_TEMPLATE = {}
     WAIT_MIN = 1
     WAIT_MAX = 3
     DEBUG_MODE = False

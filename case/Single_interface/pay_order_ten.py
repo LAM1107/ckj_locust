@@ -18,7 +18,7 @@ def _build_payload():
     "order_type": "TEN",
     "origin": "",
     "entrance": "卡池页",
-    "channel": "MINI_APP"
+    "channel": EnvConfig.CHANNEL
 }
     else:
         payload.setdefault("channel", EnvConfig.CHANNEL)

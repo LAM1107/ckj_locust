@@ -19,7 +19,7 @@ class EnvConfig:
 class ApiPaths:
     
     
-
+    REWARD_BRAND_LIST = "/gacha/reward_brands"
     GOODS_LIST = "/gacha/goods/v2/list"
     GOODS_DETAIL = "/gacha/goods/one/v2/234"
     WX_PAY = "/gacha/pay/wx"

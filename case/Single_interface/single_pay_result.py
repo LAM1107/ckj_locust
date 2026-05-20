@@ -13,19 +13,22 @@ def query_pay_result_once_lite(task_set):
     if not order_no:
         raise RuntimeError("pay result query requires orderNo")
 
-    response = task_set.client.get(
-        headers=task_set.headers,
-        url=ApiPaths.PAY_RESULT,
+    with task_set.client.get(
+        ApiPaths.PAY_RESULT,
         params={"orderNo": order_no},
+        headers=task_set.headers,
         name=ApiPaths.PAY_RESULT,
-        catch_response=True,
-    )
-    if response.status_code == 200:
-        response.success()
-    else:
-        response.failure(f"请求失败，状态码: {response.status_code}, 响应: {response.text}")
-    return response
+        catch_response=True,   # ✅ 必须加
+    ) as response:
 
+        if response.status_code != 200:
+            response.failure(
+                f"请求失败，状态码: {response.status_code}, 响应: {response.text}"
+            )
+            return False
+
+        response.success()  # ✅ 标记成功
+        return True
 
 
 

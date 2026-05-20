@@ -9,6 +9,7 @@ def _env_bool(name, default):
 
 
 class EnvConfig:
+    
     BASE_URL = "https://data.dev.goods.fun"
     API_TOKEN = "v2_4e1abd85d9c24ce484062303efff6322"
     GUEST_ID = "b851621f07fc46a9a4d54497ef998d02"
@@ -17,12 +18,14 @@ class EnvConfig:
 
 class ApiPaths:
     
+    
 
     GOODS_LIST = "/gacha/goods/v2/list"
     GOODS_DETAIL = "/gacha/goods/one/v2/234"
     WX_PAY = "/gacha/pay/wx"
     PAY_RESULT = "/gacha/pay/result"
     COUPON_LIST = "/gacha/coupon/all"
+    GACHA_BRAND_LIST = "/gacha/brands"
     
 
 
@@ -36,7 +39,7 @@ class LoadTestConfig:
     # single_list / single_list_lite / single_pay / single_pay_lite /
     # single_pay_result / single_pay_result_lite / flow_pay_result /
     # flow_pay_result_lite / mixed / single_list_detail / single_coupon
-    SCENARIO_MODE = os.getenv("LOCUST_SCENARIO_MODE", "single_coupon").lower()
+    SCENARIO_MODE = os.getenv("LOCUST_SCENARIO_MODE", "single_brand").lower()
 
     # 轻量压测默认关闭 Prometheus；如果需要 /metrics，再设置 LOCUST_ENABLE_PROMETHEUS=true。
     ENABLE_PROMETHEUS = _env_bool("LOCUST_ENABLE_PROMETHEUS", False)

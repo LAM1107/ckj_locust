@@ -4,7 +4,6 @@ from locust import SequentialTaskSet, between, task
 
 from config.config_settings import ApiPaths, EnvConfig, LoadTestConfig
 from config.logger import log_debug, log_error
-from read_utils.business_metrics import increment_write_request
 from read_utils.order_pair_store import record_order_pair
 
 
@@ -28,7 +27,6 @@ def _build_payload():
 def pay_order_once(task_set):
     """✅ 生成真实订单，必须写入（single_pay_result 场景用）"""
     payload = _build_payload()
-    increment_write_request()
 
     with task_set.client.post(
         ApiPaths.WX_PAY,
@@ -102,6 +100,7 @@ class CheckPayOrder(SequentialTaskSet):
     @task
     def wx_pay(self):
         pay_order_once(self)
+
 
 
 class CheckPayOrderLite(SequentialTaskSet):

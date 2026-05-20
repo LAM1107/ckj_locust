@@ -38,10 +38,6 @@ def get_scenario_tasks():
 
         return [CheckPayOrderLite]
 
-    if mode == "single_pay_result":
-        from case.Single_interface.single_pay_result import CheckPayResult
-
-        return [CheckPayResult]
 
     if mode == "single_pay_result_lite":
         from case.Single_interface.single_pay_result import CheckPayResultLite

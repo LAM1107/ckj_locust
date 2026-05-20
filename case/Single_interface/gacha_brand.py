@@ -28,7 +28,8 @@ class CheckGachaBrand(SequentialTaskSet):
         with self.client.get(
             GACHA_BRAND_LIST_URL,
             headers=self.headers,
-            name=ApiPaths.GACHA_BRAND_LIST
+            name=ApiPaths.GACHA_BRAND_LIST,
+            catch_response=True,
         ) as response:
             if response.status_code != 200:
                 response.failure(f"Status: {response.status_code}, Body: {response.text}")

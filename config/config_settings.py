@@ -27,6 +27,7 @@ class ApiPaths:
     COUPON_LIST = "/gacha/coupon/all"
     GACHA_BRAND_LIST = "/gacha/brands"
     GACHA_BRAND_GOODS_LIST = "/gacha/brand/goods/79"
+    USER_GOODS_ONE = "/gacha/v2/user/goods/one/234"
     
 
 
@@ -40,15 +41,15 @@ class LoadTestConfig:
     # single_list / single_list_lite / single_pay / single_pay_lite /
     # single_pay_result / single_pay_result_lite / flow_pay_result /
     # flow_pay_result_lite / mixed / single_list_detail / single_coupon
-    # single_brand / single_reward_brand / single_brand_goods
-    SCENARIO_MODE = os.getenv("LOCUST_SCENARIO_MODE", "single_brand_goods").lower()
+    # single_brand / single_reward_brand / single_brand_goods / single_user_goods_one
+    SCENARIO_MODE = os.getenv("LOCUST_SCENARIO_MODE", "single_user_goods_one").lower()
 
     # 轻量压测默认关闭 Prometheus；如果需要 /metrics，再设置 LOCUST_ENABLE_PROMETHEUS=true。
     ENABLE_PROMETHEUS = _env_bool("LOCUST_ENABLE_PROMETHEUS", False)
 
     # 报告和订单落盘默认保留，正式极限发压时可以用环境变量关闭。
     ENABLE_METRICS_REPORT = _env_bool("LOCUST_ENABLE_METRICS_REPORT", False)
-    ENABLE_ORDER_PAIR_STORE = _env_bool("LOCUST_ENABLE_ORDER_PAIR_STORE", True)
+    ENABLE_ORDER_PAIR_STORE = _env_bool("LOCUST_ENABLE_ORDER_PAIR_STORE", False)
 
     TOKEN_STRICT_MODE = True
     ORDER_PAIR_STRICT_MODE = True

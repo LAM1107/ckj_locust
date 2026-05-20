@@ -25,8 +25,12 @@ class CheckGachaBrand(SequentialTaskSet):
     @task
     def check_gacha_brand(self):
         # 轻量模式只依赖 Locust 原生 HTTP 统计，不做业务计数和手动响应标记。
-        self.client.get(
+        with self.client.get(
             GACHA_BRAND_LIST_URL,
             headers=self.headers,
             name=ApiPaths.GACHA_BRAND_LIST
-        )
+        ) as response:
+            if response.status_code != 200:
+                response.failure(f"Status: {response.status_code}, Body: {response.text}")
+                return None
+        

@@ -39,7 +39,8 @@ class LoadTestConfig:
     # single_list / single_list_lite / single_pay / single_pay_lite /
     # single_pay_result / single_pay_result_lite / flow_pay_result /
     # flow_pay_result_lite / mixed / single_list_detail / single_coupon
-    SCENARIO_MODE = os.getenv("LOCUST_SCENARIO_MODE", "single_brand").lower()
+    # single_brand / single_reward_brand
+    SCENARIO_MODE = os.getenv("LOCUST_SCENARIO_MODE", "single_reward_brand").lower()
 
     # 轻量压测默认关闭 Prometheus；如果需要 /metrics，再设置 LOCUST_ENABLE_PROMETHEUS=true。
     ENABLE_PROMETHEUS = _env_bool("LOCUST_ENABLE_PROMETHEUS", False)

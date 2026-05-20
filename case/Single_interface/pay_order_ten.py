@@ -81,7 +81,6 @@ def pay_order_once_lite(task_set):
     )
 
     if response.status_code != 200:
-        response.failure(f"Status: {response.status_code}, Body: {response.text}")
         return None
 
     try:

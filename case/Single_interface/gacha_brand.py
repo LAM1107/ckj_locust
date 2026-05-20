@@ -7,7 +7,7 @@ from config.logger import log_debug, log_error
 from read_utils.business_metrics import increment_read_request
 
 
-GACHA_BRAND_LIST_URL = f"{ApiPaths.GACHA_BRAND_LIST}?page=1&size=10"
+GACHA_LIST_URL = f"{ApiPaths.GACHA_BRAND_LIST}?{urllib.parse.urlencode({'page': '1', 'size': '10'})}"
 
 
 

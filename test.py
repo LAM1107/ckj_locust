@@ -104,3 +104,9 @@ for item in my_iter:
 #     token = TOKEN_QUEUE.get()
 #     print(token)
 
+
+
+from urllib.parse import quote
+
+s = "BMizow2SEHvyn+qOUZZQ5K02JAoocBgPSny15n+WggA="
+print(quote(s, safe=""))

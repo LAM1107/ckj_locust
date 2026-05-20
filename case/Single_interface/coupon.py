@@ -12,7 +12,7 @@ COUPON_LIST_URL = f"{ApiPaths.COUPON_LIST}"
 
 
 
-class CheckGachaListDetail(SequentialTaskSet):
+class CheckCoupon(SequentialTaskSet):
     # wait_time = between(LoadTestConfig.WAIT_MIN, LoadTestConfig.WAIT_MAX)
 
     def on_start(self):
@@ -23,7 +23,7 @@ class CheckGachaListDetail(SequentialTaskSet):
         }
 
     @task
-    def xcx_gacha_list_detail(self):
+    def check_coupon(self):
         # 轻量模式只依赖 Locust 原生 HTTP 统计，不做业务计数和手动响应标记。
         self.client.get(
             COUPON_LIST_URL,

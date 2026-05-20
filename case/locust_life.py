@@ -28,6 +28,8 @@ def get_scenario_tasks():
 
         return [CheckGachaListLite]
 
+    if mode == 
+
     if mode == "single_pay":
         from case.Single_interface.pay_order_ten import CheckPayOrder
 

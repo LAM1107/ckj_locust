@@ -9,16 +9,22 @@ from read_utils.business_metrics import increment_read_request
 
 def query_pay_result_once_lite(task_set):
     order_no = getattr(task_set.user, "order_no", None)
+
     if not order_no:
         raise RuntimeError("pay result query requires orderNo")
 
     response = task_set.client.get(
-        ApiPaths.PAY_RESULT,
-        params={"orderNo": order_no},
         headers=task_set.headers,
+        url=ApiPaths.PAY_RESULT,
+        params={"orderNo": order_no},
         name=ApiPaths.PAY_RESULT,
+        catch_response=True,
     )
-    return response.status_code == 200
+    if response.status_code == 200:
+        response.success()
+    else:
+        response.failure(f"请求失败，状态码: {response.status_code}, 响应: {response.text}")
+    return response
 
 
 

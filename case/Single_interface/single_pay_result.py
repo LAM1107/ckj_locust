@@ -23,7 +23,6 @@ def query_pay_result_once_lite(task_set):
     if response.status_code != 200:
         return None
 
-    response.success()
     return True
 
 

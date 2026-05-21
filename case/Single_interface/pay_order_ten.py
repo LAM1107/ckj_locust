@@ -96,6 +96,37 @@ def pay_order_once_lite(task_set):
     return real_order_no
 
 
+
+def pay_order_once_scenario(task_set):
+    """❌ 只拿字典数据，不写入（性能压测用）"""
+    payload = _build_payload()
+
+    response = task_set.client.post(
+        ApiPaths.WX_PAY,
+        json=payload,
+        headers={
+            "Content-Type": "application/json",
+            "X-User-Token": task_set.user.user_token,
+        },
+        name=ApiPaths.WX_PAY,
+    )
+
+    if response.status_code != 200:
+        return None
+
+    try:
+        body = response.json()
+    except Exception:
+        return None
+
+    real_order_no = body.get("orderNo")
+    if not real_order_no:
+        return None
+
+    task_set.user.order_no = real_order_no  # ✅ 只更新内存
+    return real_order_no
+
+
 class CheckPayOrder(SequentialTaskSet):
     wait_time = between(LoadTestConfig.WAIT_MIN, LoadTestConfig.WAIT_MAX)
 

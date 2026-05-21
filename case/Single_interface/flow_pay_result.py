@@ -11,24 +11,18 @@ def query_pay_result_once(task_set):
         raise RuntimeError("pay result query requires orderNo")
 
     increment_read_request()
-    with task_set.client.get(
+    response = task_set.client.get(
         ApiPaths.PAY_RESULT,
         params={"orderNo": order_no},
         headers={
             "Content-Type": "application/json",
             "X-User-Token": task_set.user.user_token,
         },
-        catch_response=True,
         name=ApiPaths.PAY_RESULT,
-    ) as response:
-        if response.status_code == 200:
-            log_debug(f"pay result query success, orderNo={order_no}")
-            response.success()
-            return True
-
-        log_error(f"pay result query failed: orderNo={order_no}, status={response.status_code}")
-        response.failure(f"Status: {response.status_code}")
-        return False
+    )
+    if response.status_code == 200:
+        return True
+    return False
 
 
 def query_pay_result_once_lite(task_set):

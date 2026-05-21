@@ -12,20 +12,17 @@ GACHA_LIST_URL = f"{ApiPaths.GOODS_LIST}?{urllib.parse.urlencode({'cursor': '0',
 
 def gacha_list_once(task_set):
     increment_read_request()
-    with task_set.client.get(
+    response = task_set.client.get(
         GACHA_LIST_URL,
         headers={
             "Content-Type": "application/json",
             "X-User-Token": task_set.user.user_token,
         },
-        catch_response=True,
         name=ApiPaths.GOODS_LIST,
-    ) as response:
-        if response.status_code == 200:
-            response.success()
-            return True
-        response.failure(f"Status: {response.status_code}")
-        return False
+    )
+    if response.status_code == 200:
+        return True
+    return False
 
 
 class CheckGachaListLite(SequentialTaskSet):

@@ -10,7 +10,19 @@ from read_utils.business_metrics import increment_read_request
 COUPON_LIST_URL = f"{ApiPaths.COUPON_LIST}"
 
 
-
+def coupon_list_once(task_set):
+    increment_read_request()
+    response = task_set.client.get(
+        COUPON_LIST_URL,
+        headers={
+            "Content-Type": "application/json",
+            "X-User-Token": task_set.user.user_token,
+        },
+        name=ApiPaths.COUPON_LIST,
+    )
+    if response.status_code == 200:
+        return True
+    return False
 
 class CheckCoupon(SequentialTaskSet):
     # wait_time = between(LoadTestConfig.WAIT_MIN, LoadTestConfig.WAIT_MAX)

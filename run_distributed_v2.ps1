@@ -507,7 +507,6 @@ try {
             -WindowStyle Hidden `
             -RedirectStandardOutput "master.log" `
             -RedirectStandardError "master_error.log" `
-            -Environment $locustEnv   # ✅ 新增这一行
 
 
         $master.Id | Out-File $MasterPidFile -Encoding UTF8

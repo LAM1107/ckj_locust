@@ -48,7 +48,7 @@ class LoadTestConfig:
     ENABLE_PROMETHEUS = _env_bool("LOCUST_ENABLE_PROMETHEUS", False)
 
     # 报告和订单落盘默认保留，正式极限发压时可以用环境变量关闭。
-    ENABLE_METRICS_REPORT = _env_bool("LOCUST_ENABLE_METRICS_REPORT", False)
+    ENABLE_METRICS_REPORT = _env_bool("LOCUST_ENABLE_METRICS_REPORT", True)
     ENABLE_ORDER_PAIR_STORE = _env_bool("LOCUST_ENABLE_ORDER_PAIR_STORE", False)
 
     TOKEN_STRICT_MODE = True

@@ -452,6 +452,9 @@ try {
     Ensure-ParentDirectory -PathValue $CsvPrefix
     Ensure-ParentDirectory -PathValue $HtmlReport
 
+    $locustEnv = @{}
+
+
     if ($Mode -in "worker", "local") {
         Write-Host (
             "Worker config before normalization: " +

@@ -33,8 +33,8 @@ class ApiPaths:
 
 class LoadTestConfig:
     PAY_REQUEST_TEMPLATE = {}
-    WAIT_MIN = 1
-    WAIT_MAX = 3
+    WAIT_MIN = 2
+    WAIT_MAX = 4
     DEBUG_MODE = False
     LOG_LEVEL = "WARNING"  # INFO, WARNING, ERROR
 

@@ -503,7 +503,9 @@ try {
             -PassThru `
             -WindowStyle Hidden `
             -RedirectStandardOutput "master.log" `
-            -RedirectStandardError "master_error.log"
+            -RedirectStandardError "master_error.log" `
+            -Environment $locustEnv   # ✅ 新增这一行
+
 
         $master.Id | Out-File $MasterPidFile -Encoding UTF8
         Write-Host "Master started with PID: $($master.Id)" -ForegroundColor Gray
@@ -526,6 +528,12 @@ try {
                 $workerArgumentString = Convert-ToArgumentString -Arguments $workerArgs
                 $escapedScriptPath = Escape-SingleQuotedPowerShellString -Value $ScriptPath
                 $escapedLocustExecutable = Escape-SingleQuotedPowerShellString -Value $LocustExecutable
+
+                # ✅ 新增：Worker 专用环境变量
+                $workerEnv = @{} + $locustEnv
+                $workerEnv["LOCUST_WORKER_INDEX"] = "$workerIndex"
+                $workerEnv["LOCUST_WORKER_COUNT"] = "$TotalWorkerCount"
+                
                 $workerCommand = @(
                     "`$env:LOCUST_WORKER_INDEX = '$workerIndex'"
                     "`$env:LOCUST_WORKER_COUNT = '$TotalWorkerCount'"

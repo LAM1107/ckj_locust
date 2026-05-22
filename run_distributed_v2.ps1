@@ -419,6 +419,28 @@ function Wait-ManagedProcesses {
     }
 }
 
+function Request-WebUiStop {
+    param(
+        [int]$Port
+    )
+
+    if ($Headless -or -not $ManageMaster) {
+        return
+    }
+
+    if ($Port -le 0) {
+        return
+    }
+
+    try {
+        $response = Invoke-WebRequest -Uri "http://localhost:$Port/stop" -Method Get -UseBasicParsing -TimeoutSec 10
+        Write-Host "Requested Locust Web UI stop via /stop." -ForegroundColor DarkGray
+        Start-Sleep -Seconds 2
+    } catch {
+        Write-Host "Failed to request Web UI stop via /stop: $($_.Exception.Message)" -ForegroundColor DarkGray
+    }
+}
+
 Stop-LocustSafely -StopMaster:$ManageMaster -StopWorkers:$ManageWorkers
 
 Write-Host "Cleaning up old PID files..." -ForegroundColor Yellow
@@ -593,6 +615,7 @@ try {
     } else {
         Write-Host "Press Enter to end Locust instances..." -ForegroundColor Yellow
         Read-Host
+        Request-WebUiStop -Port $WebPort
     }
 } finally {
     Stop-LocustSafely -StopMaster:$ManageMaster -StopWorkers:$ManageWorkers

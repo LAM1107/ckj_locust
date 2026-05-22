@@ -8,6 +8,9 @@ from config.config_settings import LoadTestConfig
 from read_utils.business_metrics import snapshot_metrics
 
 
+_LAST_REPORT_SIGNATURE = None
+
+
 def _should_write_report(environment):
     if not LoadTestConfig.ENABLE_METRICS_REPORT:
         return False
@@ -22,9 +25,25 @@ def _format_read_write_ratio(read_count, write_count):
     return f"{read_count / write_count:.2f}:1"
 
 
-@events.quitting.add_listener
-def on_quitting(environment, **kwargs):
+def _report_signature(environment):
+    total_stats = environment.stats.total
+    return (
+        total_stats.num_requests,
+        total_stats.num_failures,
+        round(total_stats.avg_response_time or 0, 2),
+        round(total_stats.total_rps or 0, 2),
+    )
+
+
+def _write_metrics_report(environment, trigger_name):
+    global _LAST_REPORT_SIGNATURE
+
     if not _should_write_report(environment):
+        return
+
+    signature = _report_signature(environment)
+    if signature == _LAST_REPORT_SIGNATURE:
+        print(f">>> skip metrics report on {trigger_name}, stats unchanged")
         return
 
     total_stats = environment.stats.total
@@ -46,6 +65,7 @@ def on_quitting(environment, **kwargs):
             report.write("=" * 80 + "\n\n")
 
             report.write("Run summary\n")
+            report.write(f"Trigger: {trigger_name}\n")
             report.write(f"Scenario mode: {LoadTestConfig.SCENARIO_MODE}\n")
             report.write(f"Total requests: {total_stats.num_requests}\n")
             report.write(f"Total failures: {total_stats.num_failures}\n")
@@ -62,7 +82,6 @@ def on_quitting(environment, **kwargs):
             report.write(f"Failures per second: {total_stats.total_fail_per_sec:.2f}\n\n")
 
             report.write("Business metrics\n")
-            # 这部分补充 Locust 的 HTTP 指标，展示场景级成功数和读写比例。
             report.write(f"Flow started: {flow_started}\n")
             report.write(f"Flow succeeded: {flow_succeeded}\n")
             report.write(f"Flow failed: {flow_failed}\n")
@@ -106,6 +125,17 @@ def on_quitting(environment, **kwargs):
                 f"{total_stats.total_rps:>10.2f} {total_stats.total_fail_per_sec:>10.2f}\n"
             )
 
+        _LAST_REPORT_SIGNATURE = signature
         print(f"Saved metrics report: {filename}")
     except Exception as exc:
         print(f"Failed to write metrics report: {exc}")
+
+
+@events.test_stop.add_listener
+def on_test_stop(environment, **kwargs):
+    _write_metrics_report(environment, "test_stop")
+
+
+@events.quitting.add_listener
+def on_quitting(environment, **kwargs):
+    _write_metrics_report(environment, "quitting")

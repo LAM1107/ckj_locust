@@ -51,6 +51,16 @@ def get_scenario_tasks():
         from case.Single_interface.user_goods_one import CheckUserGoodsOne
 
         return [CheckUserGoodsOne]
+    
+    if mode == "single_v3_check_goods":
+        from case.Single_interface.gacha_v3_check_goods import CheckGachaV3CheckGoods
+
+        return [CheckGachaV3CheckGoods]
+    
+    if mode == "single_v3_one_cards":
+        from case.Single_interface.gacha_v3_goods_one_cards import CheckGachaV3OneCards
+
+        return [CheckGachaV3OneCards]
 
     if mode == "single_pay":
         from case.Single_interface.pay_order_ten import CheckPayOrder
@@ -87,7 +97,7 @@ def get_scenario_tasks():
         "LoadTestConfig.SCENARIO_MODE must be one of: "
         "flow_pay_result, flow_pay_result_lite, mixed, "
         "single_list_lite, single_pay, single_pay_lite, "
-        "single_pay_result, single_pay_result_lite, single_coupon, single_brand, single_reward_brand, single_brand_goods, single_user_goods_one"
+        "single_pay_result, single_pay_result_lite, single_coupon, single_brand, single_reward_brand, single_brand_goods, single_user_goods_one, single_v3_check_goods, single_v3_one_cards"
     )
 
 

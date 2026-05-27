@@ -22,6 +22,7 @@ class ApiPaths:
     REWARD_BRAND_LIST = "/gacha/reward_brands"
     GOODS_LIST = "/gacha/goods/v2/list"
     GOODS_V3_ONE = "/gacha/v3/user/goods/one/234"
+    GOODS_V3_ONE_CARDS = "/gacha/v3/user/goods/one/234/cards"
     GOODS_DETAIL = "/gacha/goods/one/v2/234"
     WX_PAY = "/gacha/pay/wx"
     PAY_RESULT = "/gacha/pay/result"
@@ -35,7 +36,7 @@ class ApiPaths:
 class LoadTestConfig:
     PAY_REQUEST_TEMPLATE = {}
     WAIT_MIN = 2
-    WAIT_MAX = 4
+    WAIT_MAX = 5
     DEBUG_MODE = False
     LOG_LEVEL = "WARNING"  # INFO, WARNING, ERROR
 
@@ -43,6 +44,7 @@ class LoadTestConfig:
     # single_pay_result / single_pay_result_lite / flow_pay_result /
     # flow_pay_result_lite / mixed / single_list_detail / single_coupon
     # single_brand / single_reward_brand / single_brand_goods / single_user_goods_one
+
     SCENARIO_MODE = os.getenv("LOCUST_SCENARIO_MODE", "single_v3_check_goods").lower()
 
     # 轻量压测默认关闭 Prometheus；如果需要 /metrics，再设置 LOCUST_ENABLE_PROMETHEUS=true。

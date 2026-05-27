@@ -26,7 +26,7 @@ def gacha_v3_check_goods(task_set):
 
 
 class CheckGachaV3CheckGoods(SequentialTaskSet):
-    # wait_time = between(LoadTestConfig.WAIT_MIN, LoadTestConfig.WAIT_MAX)
+    wait_time = between(LoadTestConfig.WAIT_MIN, LoadTestConfig.WAIT_MAX)
 
     def on_start(self):
         # 轻量单接口压测：固定 URL 和 headers，避免每次请求重复构造对象。

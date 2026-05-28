@@ -7,7 +7,7 @@ from config.logger import log_debug, log_error
 from read_utils.business_metrics import increment_read_request
 
 
-GACHA_ONE_CARDS = f"{ApiPaths.GOODS_V3_ONE_CARDS}?{urllib.parse.urlencode({'cursor': '0', 'type': 'SSR-A', 'exist': '0', 'page_size': '100'})}"
+GACHA_ONE_CARDS = f"{ApiPaths.GOODS_V3_ONE_CARDS}?{urllib.parse.urlencode({'cursor': '0', 'type': 'SSR-A', 'exist': '0', 'page_size': '15'})}"
 
 
 def gacha_v3_one_cards(task_set):

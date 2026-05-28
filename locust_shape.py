@@ -8,23 +8,23 @@ class SeckillRampUpShape(LoadTestShape):
     6-10 min: 500 users
     """
 
-    # stages = [
-
-    #     # 阶段 1：180-480 秒，200 用户
-    #     {"duration": 180, "users": 200, "spawn_rate": 10},
-        
-    #     # 阶段 2：480-720 秒，400 用户
-    #     {"duration": 480, "users": 400, "spawn_rate": 10},
-
-    #     # 阶段 3：720-900 秒，600 用户
-    #     {"duration": 720, "users": 600, "spawn_rate": 10},
-    # ]
-
-
     stages = [
-        # 阶段 1：0-600 秒，100 用户
-        {"duration": 600, "users": 100, "spawn_rate": 10}
+
+        # 阶段 1：180-480 秒，200 用户
+        {"duration": 180, "users": 200, "spawn_rate": 10},
+        
+        # 阶段 2：480-720 秒，400 用户
+        {"duration": 480, "users": 400, "spawn_rate": 10},
+
+        # 阶段 3：720-900 秒，600 用户
+        {"duration": 720, "users": 600, "spawn_rate": 10},
     ]
+
+
+    # stages = [
+    #     # 阶段 1：0-600 秒，100 用户
+    #     {"duration": 600, "users": 400, "spawn_rate": 10}
+    # ]
 
     def tick(self):
         run_time = self.get_run_time()

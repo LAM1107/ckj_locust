@@ -23,7 +23,7 @@ class SeckillRampUpShape(LoadTestShape):
 
     stages = [
         # 阶段 1：0-600 秒，100 用户
-        {"duration": 600, "users": 400, "spawn_rate": 10}
+        {"duration": 600, "users": 100, "spawn_rate": 10}
     ]
 
     def tick(self):

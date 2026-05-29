@@ -23,6 +23,7 @@ class ApiPaths:
     GOODS_LIST = "/gacha/goods/v2/list"
     GOODS_V3_ONE = "/gacha/v3/user/goods/one/234"
     GOODS_V3_ONE_CARDS = "/gacha/v3/user/goods/one/234/cards"
+    GOOD_V3_BACKPACK = "/gacha/v3/user/goods/one/234/backpack/cards"
     GOODS_DETAIL = "/gacha/goods/one/v2/234"
     WX_PAY = "/gacha/pay/wx"
     PAY_RESULT = "/gacha/pay/result"
@@ -44,8 +45,9 @@ class LoadTestConfig:
     # single_pay_result / single_pay_result_lite / flow_pay_result /
     # flow_pay_result_lite / mixed / single_list_detail / single_coupon
     # single_brand / single_reward_brand / single_brand_goods / single_user_goods_one
+    # single_v3_check_goods / single_v3_one_cards / single_v3_backpack
 
-    SCENARIO_MODE = os.getenv("LOCUST_SCENARIO_MODE", "single_pay_lite").lower()
+    SCENARIO_MODE = os.getenv("LOCUST_SCENARIO_MODE", "single_v3_backpack").lower()
 
     # 轻量压测默认关闭 Prometheus；如果需要 /metrics，再设置 LOCUST_ENABLE_PROMETHEUS=true。
     ENABLE_PROMETHEUS = _env_bool("LOCUST_ENABLE_PROMETHEUS", False)

@@ -36,8 +36,8 @@ class ApiPaths:
 
 class LoadTestConfig:
     PAY_REQUEST_TEMPLATE = {}
-    WAIT_MIN = 1
-    WAIT_MAX = 3
+    WAIT_MIN = 5
+    WAIT_MAX = 10
     DEBUG_MODE = False
     LOG_LEVEL = "WARNING"  # INFO, WARNING, ERROR
 
@@ -47,7 +47,7 @@ class LoadTestConfig:
     # single_brand / single_reward_brand / single_brand_goods / single_user_goods_one
     # single_v3_check_goods / single_v3_one_cards / single_v3_backpack
 
-    SCENARIO_MODE = os.getenv("LOCUST_SCENARIO_MODE", "single_v3_backpack").lower()
+    SCENARIO_MODE = os.getenv("LOCUST_SCENARIO_MODE", "single_pay_lite").lower()
 
     # 轻量压测默认关闭 Prometheus；如果需要 /metrics，再设置 LOCUST_ENABLE_PROMETHEUS=true。
     ENABLE_PROMETHEUS = _env_bool("LOCUST_ENABLE_PROMETHEUS", False)
